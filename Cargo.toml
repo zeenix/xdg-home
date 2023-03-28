@@ -1,0 +1,26 @@
+[package]
+name = "xdg-home"
+version = "1.0.0"
+edition = "2021"
+authors = ["Zeeshan Ali Khan <zeeshanak@gnome.org>"]
+rust-version = "1.60"
+
+description = "The user's home directory as per XDG Specification"
+repository = "https://github.com/zeenix/xdg-home"
+license = "MIT"
+keywords = ["xdg", "home"]
+categories = ["filesystem", "os::unix-apis", "os::windows-apis"]
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.26.2", features = ["user"], default-features = false }
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = [
+  "combaseapi",
+  "knownfolders",
+  "shlobj",
+  "winerror",
+] }
