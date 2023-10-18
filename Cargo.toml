@@ -15,7 +15,7 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.26.2", features = ["user"], default-features = false }
+nix = { version = "0.27", features = ["user"], default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [
