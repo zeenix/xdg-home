@@ -30,13 +30,34 @@ pub fn home_dir() -> Option<PathBuf> {
 
 #[cfg(unix)]
 mod unix {
-    use nix::unistd::{Uid, User};
+    use std::ffi::{CStr, OsStr};
+    use std::os::unix::ffi::OsStrExt;
     use std::path::PathBuf;
 
     pub(super) fn home_dir() -> Option<PathBuf> {
-        let uid = Uid::effective();
+        let uid = unsafe { libc::geteuid() };
+        let passwd = unsafe { libc::getpwuid(uid) };
 
-        User::from_uid(uid).ok().flatten().map(|u| u.dir)
+        // getpwnam(3):
+        // The getpwnam() and getpwuid() functions return a pointer to a passwd structure, or NULL
+        // if the matching entry is not found or an error occurs. If an error occurs, errno is set
+        // to indicate the error. If one wants to check errno after the call, it should be set to
+        // zero before the call. The return value may point to a static area, and may be overwritten
+        // by subsequent calls to getpwent(3), getpwnam(), or getpwuid().
+        if passwd.is_null() {
+            return None;
+        }
+
+        // SAFETY: `getpwuid()` returns either NULL or a valid pointer to a `passwd` structure.
+        let passwd = unsafe { &*passwd };
+        if passwd.pw_dir.is_null() {
+            return None;
+        }
+
+        // SAFETY: `getpwuid()->pw_dir` is a valid pointer to a c-string.
+        let home_dir = unsafe { CStr::from_ptr(passwd.pw_dir) };
+
+        Some(PathBuf::from(OsStr::from_bytes(home_dir.to_bytes())))
     }
 }
 
