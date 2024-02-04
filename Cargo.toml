@@ -1,6 +1,6 @@
 [package]
 name = "xdg-home"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 authors = ["Zeeshan Ali Khan <zeeshanak@gnome.org>"]
 rust-version = "1.60"
