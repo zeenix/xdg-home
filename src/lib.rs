@@ -65,23 +65,15 @@ mod unix {
 mod win32 {
     use std::{path::PathBuf, ptr};
 
-    use winapi::{
-        shared::winerror::S_OK,
-        um::{
-            combaseapi::CoTaskMemFree, knownfolders::FOLDERID_Profile, shlobj::SHGetKnownFolderPath,
-        },
-    };
+    use windows_sys::Win32::Foundation::S_OK;
+    use windows_sys::Win32::System::Com::CoTaskMemFree;
+    use windows_sys::Win32::UI::Shell::FOLDERID_Profile;
+    use windows_sys::Win32::UI::Shell::SHGetKnownFolderPath;
 
     pub(super) fn home_dir() -> Option<PathBuf> {
+        let rfid = FOLDERID_Profile;
         let mut psz_path = ptr::null_mut();
-        let res = unsafe {
-            SHGetKnownFolderPath(
-                &FOLDERID_Profile,
-                0,
-                ptr::null_mut(),
-                &mut psz_path as *mut _,
-            )
-        };
+        let res = unsafe { SHGetKnownFolderPath(&rfid, 0, 0, &mut psz_path as *mut _) };
         if res != S_OK {
             return None;
         }
