@@ -63,7 +63,7 @@ mod unix {
 
 #[cfg(windows)]
 mod win32 {
-    use std::{path::PathBuf, ptr};
+    use std::{path::PathBuf, ptr::null_mut};
 
     use windows_sys::Win32::Foundation::S_OK;
     use windows_sys::Win32::System::Com::CoTaskMemFree;
@@ -72,8 +72,8 @@ mod win32 {
 
     pub(super) fn home_dir() -> Option<PathBuf> {
         let rfid = FOLDERID_Profile;
-        let mut psz_path = ptr::null_mut();
-        let res = unsafe { SHGetKnownFolderPath(&rfid, 0, 0, &mut psz_path as *mut _) };
+        let mut psz_path = null_mut();
+        let res = unsafe { SHGetKnownFolderPath(&rfid, 0, null_mut(), &mut psz_path as *mut _) };
         if res != S_OK {
             return None;
         }
