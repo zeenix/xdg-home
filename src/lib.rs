@@ -94,3 +94,24 @@ mod win32 {
         Some(PathBuf::from(path))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn home() {
+        let home = home_dir().unwrap();
+        assert!(home.is_dir());
+
+        if let Ok(env_home) = std::env::var("HOME") {
+            // If `HOME` is set, `home_dir` took the value from it.
+            let env_home = PathBuf::from(env_home);
+            assert_eq!(home, env_home);
+
+            // With `HOME` unset, `home_dir` should still return the same value.
+            std::env::remove_var("HOME");
+            assert_eq!(home_dir().unwrap(), env_home);
+        }
+    }
+}
