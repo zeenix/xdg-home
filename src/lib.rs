@@ -36,21 +36,22 @@ mod unix {
 
     pub(super) fn home_dir() -> Option<PathBuf> {
         let uid = unsafe { libc::geteuid() };
-        let passwd = unsafe { libc::getpwuid(uid) };
 
-        // getpwnam(3):
-        // The getpwnam() and getpwuid() functions return a pointer to a passwd structure, or NULL
-        // if the matching entry is not found or an error occurs. If an error occurs, errno is set
-        // to indicate the error. If one wants to check errno after the call, it should be set to
-        // zero before the call. The return value may point to a static area, and may be overwritten
-        // by subsequent calls to getpwent(3), getpwnam(), or getpwuid().
-        if passwd.is_null() {
-            return None;
-        }
-
-        // SAFETY: `getpwuid()` returns either NULL or a valid pointer to a `passwd` structure.
-        let passwd = unsafe { &*passwd };
-        if passwd.pw_dir.is_null() {
+        // SAFETY: Not initalizing references here so it's safe.
+        let mut passwd: libc::passwd = unsafe { std::mem::zeroed() };
+        // This has to be enough for everyone.
+        let mut passwd_buf = [0_u8; 1024];
+        let mut result = std::ptr::null_mut();
+        let ret = unsafe {
+            libc::getpwuid_r(
+                uid,
+                &mut passwd,
+                passwd_buf.as_mut_ptr() as *mut _,
+                passwd_buf.len(),
+                &mut result,
+            )
+        };
+        if ret != 0 || result.is_null() || passwd.pw_dir.is_null() {
             return None;
         }
 
@@ -91,5 +92,26 @@ mod win32 {
         }
 
         Some(PathBuf::from(path))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn home() {
+        let home = home_dir().unwrap();
+        assert!(home.is_dir());
+
+        if let Ok(env_home) = std::env::var("HOME") {
+            // If `HOME` is set, `home_dir` took the value from it.
+            let env_home = PathBuf::from(env_home);
+            assert_eq!(home, env_home);
+
+            // With `HOME` unset, `home_dir` should still return the same value.
+            std::env::remove_var("HOME");
+            assert_eq!(home_dir().unwrap(), env_home);
+        }
     }
 }
